@@ -19,6 +19,7 @@ export const CONFIG = {
       '请说明一个你认为自己需要改进的方面。',
     ],
     silenceMs: 1000,
-    silenceThreshold: 7,
+    // RMS threshold; lower than the previous FFT-average threshold so normal speech is detected reliably.
+    silenceRmsThreshold: 0.018,
   },
 };
