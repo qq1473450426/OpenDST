@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import { CONFIG } from '../config';
 
@@ -47,6 +47,7 @@ function shuffle(values) {
 }
 
 export default function MathTask({ onComplete, stream }) {
+  const experimentStartedAt = useRef(Date.now());
   const [question, setQuestion] = useState(() => makeQuestion());
   const [input, setInput] = useState('');
   const [duration, setDuration] = useState(CONFIG.math.initialQuestionMs);
@@ -64,14 +65,19 @@ export default function MathTask({ onComplete, stream }) {
   const [totalElapsed, setTotalElapsed] = useState(0);
 
   const score = answered ? Math.round((correct / answered) * 100) : 0;
-  const keyboard = useMemo(() => shuffle(['1','2','3','4','5','6','7','8','9','0']), [randomKeyboardLeft]);
+  const standardKeys = ['1','2','3','4','5','6','7','8','9','0'];
+  const keyboard = useMemo(
+    () => randomKeyboardLeft > 0 ? shuffle(standardKeys) : standardKeys,
+    [randomKeyboardLeft]
+  );
 
   useEffect(() => {
     if (finished) return undefined;
     const timer = setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      setRemaining(Math.max(0, duration - elapsed));
-      setTotalElapsed((Date.now() - startedAt) / 1000);
+      const questionElapsed = Date.now() - startedAt;
+      const experimentElapsed = (Date.now() - experimentStartedAt.current) / 1000;
+      setRemaining(Math.max(0, duration - questionElapsed));
+      setTotalElapsed(experimentElapsed);
     }, 30);
     return () => clearInterval(timer);
   }, [duration, startedAt, finished]);
@@ -84,6 +90,7 @@ export default function MathTask({ onComplete, stream }) {
   }, [totalElapsed, finished, onComplete, score]);
 
   const finishQuestion = useCallback((kind) => {
+    if (finished || feedback) return;
     const isCorrect = kind === 'correct';
     const nextAnswered = answered + 1;
     const nextCorrect = correct + (isCorrect ? 1 : 0);
@@ -117,7 +124,7 @@ export default function MathTask({ onComplete, stream }) {
       setStartedAt(Date.now());
       setRemaining(nextDuration);
     }, 700);
-  }, [answered, correct, duration, noInputStreak, randomKeyboardLeft, streak, streakType]);
+  }, [answered, correct, duration, feedback, finished, noInputStreak, randomKeyboardLeft, streak, streakType]);
 
   const press = (digit) => {
     if (feedback || finished) return;
@@ -129,18 +136,14 @@ export default function MathTask({ onComplete, stream }) {
   };
 
   useEffect(() => {
-    if (finished || feedback) return undefined;
-    if (remaining <= 0) {
-      finishQuestion(noInputStreak >= CONFIG.math.noInputStreak - 1 ? 'missing' : 'slow');
-    }
+    if (finished || feedback || remaining > 0) return undefined;
+    finishQuestion(noInputStreak >= CONFIG.math.noInputStreak - 1 ? 'missing' : 'slow');
     return undefined;
   }, [remaining, finished, feedback, finishQuestion, noInputStreak]);
 
   return (
     <main className="task-shell math-task">
-      <section className="camera-section">
-        <CameraPreview stream={stream} />
-      </section>
+      <section className="camera-section"><CameraPreview stream={stream} /></section>
       <section className="score-section">
         <div><span>当前正确率</span><strong>{score}%</strong></div>
         <div><span>同年龄/同性别参考</span><strong>{CONFIG.math.referenceScore}%</strong></div>
