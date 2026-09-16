@@ -3,6 +3,15 @@ import CameraPreview from '../components/CameraPreview';
 import AudioVisualizer from '../components/AudioVisualizer';
 import { CONFIG } from '../config';
 
+function calculateRms(data) {
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 1) {
+    const normalized = (data[i] - 128) / 128;
+    sum += normalized * normalized;
+  }
+  return Math.sqrt(sum / data.length);
+}
+
 export default function SpeechTask({ onComplete }) {
   const [phase, setPhase] = useState('prepare');
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -18,7 +27,6 @@ export default function SpeechTask({ onComplete }) {
   const phaseRef = useRef('prepare');
   const startRef = useRef(Date.now());
   const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
   const rafRef = useRef(null);
   const streamRef = useRef(null);
   const silenceRef = useRef(0);
@@ -37,8 +45,13 @@ export default function SpeechTask({ onComplete }) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user' },
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
         });
+
         if (!active) {
           stream.getTracks().forEach((track) => track.stop());
           return;
@@ -49,30 +62,39 @@ export default function SpeechTask({ onComplete }) {
 
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass) {
-          setMediaError('当前浏览器不支持声音分析，但摄像头仍可正常使用。');
+          setMediaError('当前浏览器不支持 Web Audio，声音检测不可用。');
           return;
         }
 
         const ctx = new AudioContextClass();
+        await ctx.resume().catch(() => {});
         const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.25;
         const source = ctx.createMediaStreamSource(stream);
         source.connect(analyser);
         audioContextRef.current = ctx;
-        analyserRef.current = analyser;
 
-        const data = new Uint8Array(analyser.frequencyBinCount);
+        const timeData = new Uint8Array(analyser.fftSize);
+        const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
         const tick = () => {
           if (!active) return;
-          analyser.getByteFrequencyData(data);
-          const avg = data.reduce((sum, value) => sum + value, 0) / data.length;
-          setVolume(avg);
-          setAudioData(new Uint8Array(data));
+
+          analyser.getByteTimeDomainData(timeData);
+          analyser.getByteFrequencyData(frequencyData);
+
+          const rms = calculateRms(timeData);
+          const displayVolume = Math.min(100, Math.round(rms * 1000));
+          setVolume(displayVolume);
+          setAudioData(new Uint8Array(frequencyData));
 
           if (phaseRef.current === 'speak') {
-            if (avg < CONFIG.speech.silenceThreshold) {
+            if (rms < CONFIG.speech.silenceRmsThreshold) {
               if (!silenceRef.current) silenceRef.current = Date.now();
-              if (Date.now() - silenceRef.current >= CONFIG.speech.silenceMs) setSpeaking(false);
+              if (Date.now() - silenceRef.current >= CONFIG.speech.silenceMs) {
+                setSpeaking(false);
+              }
             } else {
               silenceRef.current = 0;
               setSpeaking(true);
@@ -80,15 +102,22 @@ export default function SpeechTask({ onComplete }) {
           } else {
             silenceRef.current = 0;
           }
+
           rafRef.current = requestAnimationFrame(tick);
         };
+
         tick();
       } catch (error) {
-        setMediaError(`无法访问摄像头/麦克风：${error?.message || '请检查浏览器权限。'}`);
+        if (!active) return;
+        const message = error?.name === 'NotAllowedError'
+          ? '摄像头/麦克风权限被拒绝，请在浏览器地址栏中允许访问。'
+          : `无法访问摄像头/麦克风：${error?.message || '请检查浏览器权限。'}`;
+        setMediaError(message);
       }
     };
 
     setupMedia();
+
     return () => {
       active = false;
       cancelAnimationFrame(rafRef.current);
@@ -160,11 +189,11 @@ export default function SpeechTask({ onComplete }) {
           {phase === 'speak' && !speaking && <div className="speak-warning">请继续说话</div>}
 
           <AudioVisualizer audioData={audioData} />
-          <div className="volume-meter">声音强度：{Math.round(volume)}</div>
+          <div className="volume-meter">声音强度：{volume}</div>
           <div className="speech-progress"><div style={{ width: `${progress}%` }} /></div>
 
           <div className="speech-status">
-            {phase === 'prepare' ? '请阅读问题并准备回答' : '正在记录回答，请尽量持续表达'}
+            {phase === 'prepare' ? '请阅读问题并准备回答' : (speaking ? '正在检测声音…' : '未检测到声音，请继续说话')}
           </div>
         </div>
       </section>
