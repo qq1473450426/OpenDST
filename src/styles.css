@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; width: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #0b1020; color: #fff; }
+button { font: inherit; }
+
+.task-shell { width: 100%; min-height: 100vh; max-width: 900px; margin: 0 auto; padding: 12px; background: #111827; }
+.camera-section, .speech-camera { width: 100%; }
+.camera-box { position: relative; width: 100%; aspect-ratio: 16 / 7; overflow: hidden; border-radius: 12px; background: #020617; border: 1px solid #334155; }
+.camera-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.camera-waiting, .camera-error { height: 100%; display: grid; place-items: center; padding: 20px; color: #cbd5e1; text-align: center; }
+.recording-badge { position: absolute; top: 10px; right: 10px; padding: 5px 8px; border-radius: 5px; background: rgba(0,0,0,.65); font-size: 12px; }
+.recording-badge span { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: #ef4444; animation: pulse 1s infinite; }
+
+.score-section { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; background: #1e293b; border-radius: 12px; }
+.score-section > div { display: flex; justify-content: space-between; align-items: center; }
+.score-section strong { font-size: 22px; }
+.score-bars { grid-column: 1 / -1; position: relative; height: 14px !important; display: block !important; background: #334155; border-radius: 999px; overflow: hidden; }
+.score-user, .score-reference { position: absolute; left: 0; height: 50%; }
+.score-user { top: 0; background: #22c55e; }
+.score-reference { bottom: 0; background: #f59e0b; opacity: .85; }
+
+.stress-hint { margin: 10px 0; padding: 12px; background: #7f1d1d; border: 1px solid #ef4444; border-radius: 10px; text-align: center; }
+.question-card { margin-top: 12px; min-height: 190px; padding: 18px; border-radius: 14px; background: #f8fafc; color: #0f172a; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+.question-card.feedback-wrong, .question-card.feedback-slow, .question-card.feedback-missing { background: #fecaca; }
+.question-number { font-size: 13px; color: #64748b; }
+.question { font-size: clamp(32px, 7vw, 58px); font-weight: 800; margin: 16px 0; }
+.answer { min-height: 42px; font-size: 30px; font-weight: 700; }
+.feedback-text { color: #b91c1c; font-size: 22px; font-weight: 800; }
+.progress-track { width: 100%; height: 14px; margin: 10px 0; background: #450a0a; border-radius: 999px; overflow: hidden; }
+.progress-fill { height: 100%; background: #ef4444; transition: width .03s linear; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 620px; margin: 0 auto; }
+.keypad button { min-height: 62px; border: 0; border-radius: 10px; background: #334155; color: white; font-size: 28px; font-weight: 700; touch-action: manipulation; }
+.keypad button:active { transform: scale(.97); background: #475569; }
+.keypad button:disabled { opacity: .45; }
+.keypad .clear { grid-column: 1 / -1; min-height: 48px; background: #475569; font-size: 18px; }
+.task-meta { padding: 10px; text-align: center; color: #94a3b8; font-size: 13px; }
+
+.speech-task { min-height: 100vh; }
+.speech-running { animation: redFlash .85s steps(1, end) infinite; }
+.speech-header { margin-top: 12px; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, .92); display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: center; }
+.speech-stage { color: #cbd5e1; }
+.speech-phase { text-align: center; font-weight: 800; }
+.speech-time { font-size: 30px; font-weight: 900; }
+.speech-question { margin-top: 12px; padding: 22px; border-radius: 14px; background: rgba(248,250,252,.96); color: #0f172a; text-align: center; }
+.speech-question h1 { margin: 0 0 12px; font-size: clamp(24px, 5vw, 42px); }
+.speech-question p { margin: 0; font-size: 18px; line-height: 1.7; }
+.prepare-warning, .speak-warning { margin-top: 16px; padding: 10px; border-radius: 8px; background: #e2e8f0; color: #334155; }
+.speak-warning { background: #fee2e2; color: #991b1b; }
+.silence-warning { margin: 12px 0; padding: 14px; border-radius: 10px; background: #dc2626; text-align: center; font-size: 22px; font-weight: 900; }
+.speech-progress { margin-top: 14px; }
+.audio-panel { margin-top: 12px; padding: 12px; border-radius: 12px; background: #020617; border: 1px solid #334155; }
+.audio-panel canvas { display: block; width: 100%; height: 120px; }
+.volume-label { text-align: right; color: #94a3b8; font-size: 12px; }
+
+.permission-screen, .complete-screen { min-height: 100vh; display: grid; place-items: center; align-content: center; gap: 12px; padding: 24px; text-align: center; background: #111827; }
+.complete-screen button { padding: 12px 24px; border: 0; border-radius: 10px; background: #2563eb; color: white; cursor: pointer; }
+
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes redFlash { 0%, 48% { background: #111827; } 50%, 100% { background: #5b0000; } }
+
+@media (max-width: 600px) {
+  .task-shell { padding: 8px; }
+  .camera-box { aspect-ratio: 16 / 8; }
+  .score-section { font-size: 13px; }
+  .score-section strong { font-size: 18px; }
+  .question-card { min-height: 155px; }
+  .keypad button { min-height: 58px; }
+  .speech-header { grid-template-columns: 1fr auto; }
+  .speech-phase { grid-column: 1 / -1; grid-row: 1; }
+  .speech-stage { grid-row: 2; }
+  .speech-time { grid-row: 2; }
+}
