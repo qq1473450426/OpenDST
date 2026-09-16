@@ -1,59 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import MathTask from './tasks/MathTask';
+import SpeechIntro from './tasks/SpeechIntro';
 import SpeechTask from './tasks/SpeechTask';
 
 export default function App() {
-  const [task, setTask] = useState('math');
-  const [stream, setStream] = useState(null);
-  const [mediaError, setMediaError] = useState('');
-  const [finalStats, setFinalStats] = useState(null);
+  const [stage, setStage] = useState('profile');
+  const [profile, setProfile] = useState({ age: '', gender: '' });
+  const [mathScore, setMathScore] = useState(null);
 
-  useEffect(() => {
-    let active = true;
-    navigator.mediaDevices?.getUserMedia({
-      video: { facingMode: 'user' },
-      audio: true,
-    }).then((mediaStream) => {
-      if (active) setStream(mediaStream);
-      else mediaStream.getTracks().forEach((track) => track.stop());
-    }).catch((error) => {
-      if (active) setMediaError(error?.message || '浏览器未授予摄像头/麦克风权限');
-    });
+  const start = () => {
+    if (!profile.age || !profile.gender) return;
+    setStage('math');
+  };
 
-    return () => {
-      active = false;
-      // Keep the stream alive between Math-Task and Speech-Task.
-    };
-  }, []);
-
-  useEffect(() => () => {
-    stream?.getTracks().forEach((track) => track.stop());
-  }, [stream]);
-
-  if (mediaError && !stream) {
-    return (
-      <div className="permission-screen">
-        <h1>需要摄像头和麦克风权限</h1>
-        <p>{mediaError}</p>
-        <p>请在浏览器设置中允许本网站使用摄像头和麦克风，然后刷新页面。</p>
+  if (stage === 'profile') return (
+    <main className="start-shell">
+      <div className="start-card">
+        <h1>测试开始</h1>
+        <p>请填写年龄和性别。该信息仅用于同年龄/同性别参考值显示。</p>
+        <label>年龄</label>
+        <input type="number" min="1" max="120" value={profile.age} onChange={(e) => setProfile({ ...profile, age: e.target.value })} placeholder="请输入年龄" />
+        <label>性别</label>
+        <select value={profile.gender} onChange={(e) => setProfile({ ...profile, gender: e.target.value })}>
+          <option value="">请选择</option><option value="male">男</option><option value="female">女</option><option value="other">其他/不便说明</option>
+        </select>
+        <button className="primary-button" onClick={start} disabled={!profile.age || !profile.gender}>开始心算任务</button>
       </div>
-    );
-  }
-
-  if (task === 'math') {
-    return <MathTask stream={stream} onComplete={() => setTask('speech')} />;
-  }
-
-  if (task === 'speech') {
-    return <SpeechTask stream={stream} onComplete={(stats) => { setFinalStats(stats); setTask('done'); }} />;
-  }
-
-  return (
-    <div className="complete-screen">
-      <h1>测试结束</h1>
-      <p>两个任务已经完成。</p>
-      {finalStats && <p>演讲任务共完成 {finalStats.length} 个场景。</p>}
-      <button onClick={() => window.location.reload()}>重新开始</button>
-    </div>
+    </main>
   );
+
+  if (stage === 'math') return <MathTask onComplete={(score) => { setMathScore(score); setStage('speechIntro'); }} />;
+  if (stage === 'speechIntro') return <SpeechIntro onStart={() => setStage('speech')} />;
+  if (stage === 'speech') return <SpeechTask onComplete={() => setStage('done')} />;
+
+  return <main className="start-shell"><div className="start-card"><h1>测试结束</h1><p>本次任务已经完成。</p><p>心算任务最终正确率：<strong>{mathScore}%</strong></p><button className="primary-button" onClick={() => window.location.reload()}>重新开始</button></div></main>;
 }
