@@ -6,6 +6,7 @@ button, input, select { font: inherit; }
 .start-card h1 { margin-top: 0; }
 .start-card label { display: block; margin: 18px 0 7px; font-weight: 700; }
 .start-card input, .start-card select { width: 100%; padding: 12px; border: 1px solid #aaa; border-radius: 6px; }
+.form-note { font-size: 13px; color: #666; line-height: 1.5; }
 .primary-button { width: 100%; margin-top: 24px; padding: 14px; border: 0; border-radius: 6px; background: #222; color: #fff; cursor: pointer; }
 .primary-button:disabled { opacity: .45; cursor: not-allowed; }
 .task-shell { width: min(720px, 100%); margin: 0 auto; padding: 20px; text-align: center; }
@@ -19,6 +20,7 @@ button, input, select { font: inherit; }
 .feedback-wrong, .feedback-slow, .feedback-missing { background: #fee; }
 .progress-track { height: 16px; margin: 12px 0; background: #ddd; border-radius: 8px; overflow: hidden; }.progress-fill { height: 100%; background: #d00; transition: width .03s linear; }
 .hardware-keypad-hint { font-size: 14px; color: #555; margin: 10px 0; }.task-meta { font-size: 18px; color: #333; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .speech-shell { min-height: 100vh; padding: 20px; text-align: center; transition: background .08s; }.speech-shell.stress-flash { background: #f33; }
 .camera-box { position: relative; width: min(520px, 100%); margin: 0 auto 16px; aspect-ratio: 16/9; background: #111; overflow: hidden; border-radius: 8px; }.camera-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }.camera-error { color: #fff; padding: 30px; }.recording-badge { position: absolute; top: 10px; right: 10px; color: #fff; background: rgba(0,0,0,.6); padding: 5px 8px; border-radius: 5px; }.recording-badge span { display: inline-block; width: 9px; height: 9px; background: red; border-radius: 50%; margin-right: 5px; }
 .speech-content { max-width: 720px; margin: auto; background: rgba(255,255,255,.94); border-radius: 10px; padding: 20px; }.speech-phase { font-size: 24px; font-weight: 700; }.speech-timer { font-size: 48px; font-weight: 700; margin: 8px; }.speech-content h2 { min-height: 70px; }.speak-warning { padding: 12px; color: #a00; font-weight: 700; background: #fee; }.volume-meter { margin: 8px; }.speech-progress { height: 10px; background: #ddd; border-radius: 5px; overflow: hidden; }.speech-progress > div { height: 100%; background: #222; }.speech-counter { margin-top: 12px; color: #555; }
