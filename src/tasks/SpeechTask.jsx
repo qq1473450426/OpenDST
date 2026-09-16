@@ -13,6 +13,7 @@ export default function SpeechTask({ onComplete }) {
   const [done, setDone] = useState(false);
   const [audioData, setAudioData] = useState(new Uint8Array(64));
   const [mediaStream, setMediaStream] = useState(null);
+  const [mediaError, setMediaError] = useState('');
 
   const phaseRef = useRef('prepare');
   const startRef = useRef(Date.now());
@@ -28,7 +29,11 @@ export default function SpeechTask({ onComplete }) {
     let active = true;
 
     const setupMedia = async () => {
-      if (!navigator.mediaDevices?.getUserMedia) return;
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setMediaError('当前浏览器不支持摄像头/麦克风访问，请使用最新版 Chrome 或 Edge。');
+        return;
+      }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user' },
@@ -43,7 +48,11 @@ export default function SpeechTask({ onComplete }) {
         setMediaStream(stream);
 
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
+        if (!AudioContextClass) {
+          setMediaError('当前浏览器不支持声音分析，但摄像头仍可正常使用。');
+          return;
+        }
+
         const ctx = new AudioContextClass();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 256;
@@ -74,8 +83,8 @@ export default function SpeechTask({ onComplete }) {
           rafRef.current = requestAnimationFrame(tick);
         };
         tick();
-      } catch {
-        // CameraPreview will show the waiting state; the task itself remains usable.
+      } catch (error) {
+        setMediaError(`无法访问摄像头/麦克风：${error?.message || '请检查浏览器权限。'}`);
       }
     };
 
@@ -129,17 +138,35 @@ export default function SpeechTask({ onComplete }) {
   const progress = Math.max(0, Math.min(100, 100 - (remaining / totalMs) * 100));
 
   return (
-    <main className={`speech-shell ${phase === 'speak' && flash ? 'stress-flash' : ''}`}>
-      <CameraPreview stream={mediaStream} />
-      <section className="speech-content">
-        <div className="speech-phase">{phase === 'prepare' ? '准备时间' : '请开始回答'}</div>
-        <div className="speech-timer">{(remaining / 1000).toFixed(1)} s</div>
-        <h2>{question}</h2>
-        {phase === 'speak' && !speaking && <div className="speak-warning">请继续说话</div>}
-        <AudioVisualizer audioData={audioData} />
-        <div className="volume-meter">声音强度：{Math.round(volume)}</div>
-        <div className="speech-progress"><div style={{ width: `${progress}%` }} /></div>
-        <div className="speech-counter">第 {questionIndex + 1} / {CONFIG.speech.questions.length} 题</div>
+    <main className="speech-shell">
+      <aside className="speech-camera-pane">
+        <CameraPreview stream={mediaStream} />
+        <div className="speech-camera-label">前置摄像头 · 实时采集</div>
+      </aside>
+
+      <section className={`speech-content ${phase === 'speak' && flash ? 'stress-flash' : ''}`}>
+        <div className="speech-content-inner">
+          <div className="speech-header">
+            <span>自由演讲任务</span>
+            <span>第 {questionIndex + 1} / {CONFIG.speech.questions.length} 题</span>
+          </div>
+
+          <div className="speech-phase">{phase === 'prepare' ? '准备时间' : '请开始回答'}</div>
+          <div className="speech-timer">{(remaining / 1000).toFixed(1)}<small> 秒</small></div>
+          <div className="speech-question-label">请根据问题进行回答</div>
+          <h2>{question}</h2>
+
+          {mediaError && <div className="media-error">{mediaError}</div>}
+          {phase === 'speak' && !speaking && <div className="speak-warning">请继续说话</div>}
+
+          <AudioVisualizer audioData={audioData} />
+          <div className="volume-meter">声音强度：{Math.round(volume)}</div>
+          <div className="speech-progress"><div style={{ width: `${progress}%` }} /></div>
+
+          <div className="speech-status">
+            {phase === 'prepare' ? '请阅读问题并准备回答' : '正在记录回答，请尽量持续表达'}
+          </div>
+        </div>
       </section>
     </main>
   );
