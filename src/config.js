@@ -19,7 +19,7 @@ export const CONFIG = {
       '请说明一个你认为自己需要改进的方面。',
     ],
     silenceMs: 1000,
-    // RMS threshold; lower than the previous FFT-average threshold so normal speech is detected reliably.
-    silenceRmsThreshold: 0.018,
+    // 适配普通笔记本/USB麦克风：使用时域 RMS + 环境噪声底动态阈值。
+    silenceRmsThreshold: 0.006,
   },
 };
