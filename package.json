@@ -1,0 +1,17 @@
+{
+  "name": "opendst-lite",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {}
+}
